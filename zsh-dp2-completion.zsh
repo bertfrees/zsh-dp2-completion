@@ -1,8 +1,7 @@
-# Auto completion the Daisy Pipeline 2 command line a.k.a. dp2
+# Zsh auto completion for the Daisy Pipeline 2 command line a.k.a. dp2
 
 _dp2() {
 	_dp2_read_help
-	_dp2_read_script_help zedai-to-html
 	if (( CURRENT > 2 )); then
 		local cmd=${words[2]}
 		(( CURRENT-- ))
@@ -46,7 +45,7 @@ typeset -A DP2_CACHE_SCRIPT_OPTIONS
 _dp2_read_help() {
 	if [[ -z $DP2_CACHE_SCRIPTS ]]; then
 		local dp2_help; dp2_help=$(dp2 help 2>/dev/null)
-		DP2_CACHE_SCRIPTS=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/:/\\:/g' | sed 's/	.*//' )
+		DP2_CACHE_SCRIPTS=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//' )
 		DP2_CACHE_SCRIPTS_LONG=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/:/\\:/g' | sed 's/		*/:/')
 		DP2_CACHE_GENERAL_COMMANDS=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//')
 		DP2_CACHE_GENERAL_COMMANDS_LONG=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/		*/:/')
