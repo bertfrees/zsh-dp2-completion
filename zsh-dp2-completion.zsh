@@ -10,6 +10,7 @@ _dp2() {
 			_dp2_read_script_help $cmd
 			_arguments \
 				${(f)"$(_dp2_script_options $cmd)"} \
+				'(-n --name)'{-n,--name}'[Job''s nice name]:NAME: ' \
 				'(-b --background -p --persistent)'{-b,--background}'[Runs the job in the background (will be persistent)]' \
 				'(-p --persistent)'{-p,--persistent}'[Forces to keep the job data in the server]' \
 				'(-q --quiet)'{-q,--quiet}'[Doesn''t show the job messages]'
@@ -52,14 +53,29 @@ _dp2_read_help() {
 	fi
 }
 
+_comma_separated_files() {
+	local -a suf
+	compset -P '*,'
+	_files
+}
+
 _dp2_read_script_help() {
 	if [[ -z $DP2_CACHE_SCRIPT_OPTIONS[$1] ]]; then
-		local script_help script_inputs script_options
-		script_help=$(dp2 help $1 2>/dev/null | sed 's/^[ 	]*//' | grep -E '^(--x-|--i-|Desc:|Type:)' | sed 's/^\(--[^ ]*\).*/\1/' \
-			| sed 's/^Desc:\(.*\)$/[\1]/' | sed 's/^Type:any.*URI.*/:file:_files/' | sed 's/^Type:\(boolean\)$/:\1:(true false)/' | sed 's/^Type\(.*\)$/:\1: /')
-		script_inputs=$(echo $script_help | sed -n '/^--i.*/{N;p;}' | sed '$!N;s/\n//' | sed 's/$/:file:_files/')
-		script_options=$(echo $script_help | sed -n '/^--x.*/{N;N;p;}' | sed 'N;N;s!\n!!g')
-		DP2_CACHE_SCRIPT_OPTIONS[$1]=$(echo "$script_inputs\n$script_options")
+		DP2_CACHE_SCRIPT_OPTIONS[$1]=$(dp2 help $1 2>/dev/null \
+			| sed 's/^[ 	]*//' \
+			| grep -Ev '^(Usage|-n|-b|-p|-q)' \
+			| sed -e ':a' -e '$!N;s/\n\([^-]\)/ \1/;ta' -e 'P;D' \
+			| sed -e 's/^\(--[^ ]*\)  *\[\([^ ][^ ]*\)\]  *\(.*\)$/\1 \2 \3/' \
+			| sed -e 's/^\(--[^ ]*\)  *\([^ ][^ ]*\)  *\(.*\)$/\1[\3]:\2:#/' \
+			| sed -e 's/^\(.*:input:\)#$/\1_files/' \
+			| sed -e 's/^\(.*:output:\)#$/\1_files/' \
+			| sed -e 's/^\(.*:input1,input2,input3:\)#$/\1_comma_separated_files/' \
+			| sed -e 's/^\(.*:output1,output2,output3:\)#$/\1_comma_separated_files/' \
+			| sed -e 's/^\(.*:anyFileURI:\)#$/\1_files/' \
+			| sed -e 's|^\(.*:anyDirURI:\)#$|\1_files -/|' \
+			| sed -e 's/^\(.*:boolean:\)#$/\1(true false)/' \
+			| sed -e 's/^\(.*\)#$/\1 /'
+		)
 	fi
 }
 
