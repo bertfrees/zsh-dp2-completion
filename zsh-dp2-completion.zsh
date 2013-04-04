@@ -8,12 +8,7 @@ _dp2() {
 		shift words
 		if [[ ${DP2_CACHE_SCRIPTS[*]} =~ $cmd ]]; then
 			_dp2_read_script_help $cmd
-			_arguments \
-				${(f)"$(_dp2_script_options $cmd)"} \
-				'(-n --name)'{-n,--name}'[Job''s nice name]:NAME: ' \
-				'(-b --background -p --persistent)'{-b,--background}'[Runs the job in the background (will be persistent)]' \
-				'(-p --persistent)'{-p,--persistent}'[Forces to keep the job data in the server]' \
-				'(-q --quiet)'{-q,--quiet}'[Doesn''t show the job messages]'
+			_arguments ${(f)"$(_dp2_script_options $cmd)"} 
 		else
 			case $cmd in
 				(help)
@@ -53,6 +48,10 @@ _dp2_read_help() {
 	fi
 }
 
+_zip_files() {
+	_files -g "*.zip"
+}
+
 _comma_separated_files() {
 	local -a suf
 	compset -P '*,'
@@ -62,19 +61,24 @@ _comma_separated_files() {
 _dp2_read_script_help() {
 	if [[ -z $DP2_CACHE_SCRIPT_OPTIONS[$1] ]]; then
 		DP2_CACHE_SCRIPT_OPTIONS[$1]=$(dp2 help $1 2>/dev/null \
-			| sed 's/^[ 	]*//' \
-			| grep -Ev '^(Usage|-n|-b|-p|-q)' \
+			| sed -e 's/^ *//' \
+			| sed -e 's/^Usage.*$//' \
 			| sed -e ':a' -e '$!N;s/\n\([^-]\)/ \1/;ta' -e 'P;D' \
-			| sed -e 's/^\(--[^ ]*\)  *\[\([^ ][^ ]*\)\]  *\(.*\)$/\1 \2 \3/' \
-			| sed -e 's/^\(--[^ ]*\)  *\([^ ][^ ]*\)  *\(.*\)$/\1[\3]:\2:#/' \
-			| sed -e 's/^\(.*:input:\)#$/\1_files/' \
-			| sed -e 's/^\(.*:output:\)#$/\1_files/' \
-			| sed -e 's/^\(.*:input1,input2,input3:\)#$/\1_comma_separated_files/' \
-			| sed -e 's/^\(.*:output1,output2,output3:\)#$/\1_comma_separated_files/' \
-			| sed -e 's/^\(.*:anyFileURI:\)#$/\1_files/' \
-			| sed -e 's|^\(.*:anyDirURI:\)#$|\1_files -/|' \
-			| sed -e 's/^\(.*:boolean:\)#$/\1(true false)/' \
-			| sed -e 's/^\(.*\)#$/\1 /'
+			| sed -e 's/^\(-[^ ,]*\) *, *\(--.*\)$/\1,\2/' \
+			| sed -e 's/^\(-[^ ]*\)  *\[\([^ ][^ ]*\)\]  *\(.*\)$/\1 \2 \3/' \
+			| sed -e 's/^\(-[bpq][^ ]*\)  *\(.*\)$/\1[\2]/' \
+			| sed -e 's/^\(-[^bpq][^ ]*\)  *\([^ ][^ ]*\)  *\(.*\)$/\1[\3]:\2:#/' \
+			| sed -e 's/^\(--i.*:input:\)#$/\1_files/' \
+			| sed -e 's/^\(--i.*:input1,input2,input3:\)#$/\1_comma_separated_files/' \
+			| sed -e 's/^\(--o.*:output:\)#$/\1_files/' \
+			| sed -e 's/^\(--x.*:anyFileURI:\)#$/\1_files/' \
+			| sed -e 's|^\(--x.*:anyDirURI:\)#$|\1_files -/|' \
+			| sed -e 's/^\(--x.*:boolean:\)#$/\1(true false)/' \
+			| sed -e 's/^\(-[fd].*\)#$/\1_zip_files/' \
+			| sed -e 's/^\(-.*\)#$/\1 /' \
+			| sed -e 's/^\(-[^,]*\),\(--[^\[]*\)\(\[.*\)$/(\2)\1\3\\n(\1)\2\3/' \
+			| sed -e 's/(-b)/(-b -p --persistent)/' \
+			| sed -e 's/(--background)/(--background -p --persistent)/'
 		)
 	fi
 }
