@@ -6,9 +6,9 @@ _dp2() {
 		local cmd=${words[2]}
 		(( CURRENT-- ))
 		shift words
-		if [[ ${DP2_CACHE_SCRIPTS[*]} =~ $cmd ]]; then
+		if [[ ${_DP2_CACHE_SCRIPTS[*]} =~ $cmd ]]; then
 			_dp2_read_script_help $cmd
-			_arguments ${(f)"$(_dp2_script_options $cmd)"} 
+			_arguments ${(f)"$(_dp2_script_options $cmd)"}
 		else
 			case $cmd in
 				(help)
@@ -32,19 +32,19 @@ _dp2() {
 	fi
 }
 
-DP2_CACHE_SCRIPTS=()
-DP2_CACHE_SCRIPTS_LONG=()
-DP2_CACHE_GENERAL_COMMANDS=()
-DP2_CACHE_GENERAL_COMMANDS_LONG=()
-typeset -A DP2_CACHE_SCRIPT_OPTIONS
+_DP2_CACHE_SCRIPTS=()
+_DP2_CACHE_SCRIPTS_LONG=()
+_DP2_CACHE_GENERAL_COMMANDS=()
+_DP2_CACHE_GENERAL_COMMANDS_LONG=()
+typeset -A _DP2_CACHE_SCRIPT_OPTIONS
 
 _dp2_read_help() {
-	if [[ -z $DP2_CACHE_SCRIPTS ]]; then
+	if [[ -z $_DP2_CACHE_SCRIPTS ]]; then
 		local dp2_help; dp2_help=$(dp2 help 2>/dev/null)
-		DP2_CACHE_SCRIPTS=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//' )
-		DP2_CACHE_SCRIPTS_LONG=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/:/\\:/g' | sed 's/		*/:/')
-		DP2_CACHE_GENERAL_COMMANDS=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//')
-		DP2_CACHE_GENERAL_COMMANDS_LONG=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/		*/:/')
+		_DP2_CACHE_SCRIPTS=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//' )
+		_DP2_CACHE_SCRIPTS_LONG=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/:/\\:/g' | sed 's/		*/:/')
+		_DP2_CACHE_GENERAL_COMMANDS=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//')
+		_DP2_CACHE_GENERAL_COMMANDS_LONG=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/		*/:/')
 	fi
 }
 
@@ -59,8 +59,8 @@ _comma_separated_files() {
 }
 
 _dp2_read_script_help() {
-	if [[ -z $DP2_CACHE_SCRIPT_OPTIONS[$1] ]]; then
-		DP2_CACHE_SCRIPT_OPTIONS[$1]=$(dp2 help $1 2>/dev/null \
+	if [[ -z $_DP2_CACHE_SCRIPT_OPTIONS[$1] ]]; then
+		_DP2_CACHE_SCRIPT_OPTIONS[$1]=$(dp2 help $1 2>/dev/null \
 			| sed -e 's/^ *//' \
 			| sed -e 's/^Usage.*$//' \
 			| sed -e ':a' -e '$!N;s/\n\([^-]\)/ \1/;ta' -e 'P;D' \
@@ -83,11 +83,11 @@ _dp2_read_script_help() {
 	fi
 }
 
-_dp2_scripts() { echo "$DP2_CACHE_SCRIPTS" }
-_dp2_scripts_long() { echo "$DP2_CACHE_SCRIPTS_LONG" }
-_dp2_general_commands() { echo "$DP2_CACHE_GENERAL_COMMANDS" }
-_dp2_general_commands_long() { echo "$DP2_CACHE_GENERAL_COMMANDS_LONG" }
-_dp2_script_options() { echo "$DP2_CACHE_SCRIPT_OPTIONS[$1]" }
+_dp2_scripts() { echo "$_DP2_CACHE_SCRIPTS" }
+_dp2_scripts_long() { echo "$_DP2_CACHE_SCRIPTS_LONG" }
+_dp2_general_commands() { echo "$_DP2_CACHE_GENERAL_COMMANDS" }
+_dp2_general_commands_long() { echo "$_DP2_CACHE_GENERAL_COMMANDS_LONG" }
+_dp2_script_options() { echo "$_DP2_CACHE_SCRIPT_OPTIONS[$1]" }
 
 _dp2_jobs() {
 	echo "$(dp2 jobs 2>/dev/null | grep '^\[DP2\] Job Id' | sed 's/^.*://')"
