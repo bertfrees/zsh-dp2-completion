@@ -56,18 +56,36 @@ _dp2_read_help() {
 }
 
 _zip_files() {
-	_files -g "*.zip"
+	_files "$@" -g "*.zip"
 }
 
-_comma_separated_files() {
+_comma_separated() {
 	local -a suf
 	compset -P '*,'
-	_files
+	"${@[$#]}" "${@[1,${#}-1]}"
+}
+
+_files_from_data_zip() {
+	local data_file
+	data_file=$words[$(($words[(i)(-d|--data)] + 1))]
+	[[ -z $data_file ]] && return 1
+	if [[ $data_file !=  $_DP2_CACHE_DATA_ZIP_NAME ]]; then
+		_DP2_CACHE_DATA_ZIP_NAME="$data_file"
+		_DP2_CACHE_DATA_ZIP_CONTENT=(${(f)"$(eval zipinfo -1 $_DP2_CACHE_DATA_ZIP_NAME)"})
+	fi
+	_wanted files-from-data-zip expl 'file from data zip' _multi_parts / _DP2_CACHE_DATA_ZIP_CONTENT && return
 }
 
 _dp2_read_script_help() {
 	if [[ -z $_DP2_CACHE_SCRIPT_OPTIONS[$1] ]]; then
-		_DP2_CACHE_SCRIPT_OPTIONS[$1]=$(dp2 help $1 2>/dev/null \
+		local dp2_script_help _input_files
+		dp2_script_help=$(dp2 help $1 2>/dev/null)
+		if [[ -n $(echo $dp2_script_help | grep '^  *-d, --data') ]]; then
+			_input_files() { _files_from_data_zip }
+		else
+			_input_files() { _files }
+		fi
+		_DP2_CACHE_SCRIPT_OPTIONS[$1]=$(echo $dp2_script_help \
 			| sed -e 's/^ *//' \
 			| sed -e 's/^Usage.*$//' \
 			| sed -e ':a' -e '$!N;s/\n\([^-]\)/ \1/;ta' -e 'P;D' \
@@ -75,8 +93,8 @@ _dp2_read_script_help() {
 			| sed -e 's/^\(-[^ ]*\)  *\[\([^ ][^ ]*\)\]  *\(.*\)$/\1 \2 \3/' \
 			| sed -e 's/^\(-[bpq][^ ]*\)  *\(.*\)$/\1[\2]/' \
 			| sed -e 's/^\(-[^bpq][^ ]*\)  *\([^ ][^ ]*\)  *\(.*\)$/\1[\3]:\2:#/' \
-			| sed -e 's/^\(--i.*:input:\)#$/\1_files/' \
-			| sed -e 's/^\(--i.*:input1,input2,input3:\)#$/\1_comma_separated_files/' \
+			| sed -e 's/^\(--i.*:input:\)#$/\1_input_files/' \
+			| sed -e 's/^\(--i.*:input1,input2,input3:\)#$/\1_comma_separated _input_files/' \
 			| sed -e 's/^\(--o.*:output:\)#$/\1_files/' \
 			| sed -e 's/^\(--x.*:anyFileURI:\)#$/\1_files/' \
 			| sed -e 's|^\(--x.*:anyDirURI:\)#$|\1_files -/|' \
