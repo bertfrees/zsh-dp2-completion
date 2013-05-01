@@ -40,11 +40,18 @@ typeset -A _DP2_CACHE_SCRIPT_OPTIONS
 
 _dp2_read_help() {
 	if [[ -z $_DP2_CACHE_SCRIPTS ]]; then
-		local dp2_help; dp2_help=$(dp2 help 2>/dev/null)
-		_DP2_CACHE_SCRIPTS=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//' )
-		_DP2_CACHE_SCRIPTS_LONG=$(echo $dp2_help | sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/:/\\:/g' | sed 's/		*/:/')
-		_DP2_CACHE_GENERAL_COMMANDS=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/	.*//')
-		_DP2_CACHE_GENERAL_COMMANDS_LONG=$(echo $dp2_help | sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' | sed 's/		*/:/')
+		local dp2_help dp2_help_scripts dp2_help_general_commands;
+		dp2_help=$(dp2 help 2>/dev/null)
+		dp2_help_scripts=$(echo $dp2_help \
+			| sed -e '1,/^Script commands:$/d' | sed '1d' | sed -e '/^$/,$d' \
+			| sed -e ':a' -e '$!N;s/\n\( \) */\1/;ta' -e 'P;D')
+		dp2_help_general_commands=$(echo $dp2_help \
+			| sed -e '1,/^General commands:$/d' | sed '1d' | sed -e '/^$/,$d' \
+			| sed -e ':a' -e '$!N;s/\n\( \) */\1/;ta' -e 'P;D')
+		_DP2_CACHE_SCRIPTS=$(echo $dp2_help_scripts | sed 's/	.*//' )
+		_DP2_CACHE_SCRIPTS_LONG=$(echo $dp2_help_scripts | sed 's/:/\\:/g' | sed 's/		*/:/')
+		_DP2_CACHE_GENERAL_COMMANDS=$(echo $dp2_help_general_commands | sed 's/	.*//')
+		_DP2_CACHE_GENERAL_COMMANDS_LONG=$(echo $dp2_help_general_commands | sed 's/		*/:/')
 	fi
 }
 
